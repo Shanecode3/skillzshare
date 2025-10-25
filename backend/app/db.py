@@ -1,64 +1,55 @@
-from typing import Generator, Optional
+from typing import Optional, Generator
 import re
-import psycopg2
-from psycopg2 import pool
-from psycopg2.extras import RealDictCursor
+from psycopg_pool import ConnectionPool
+from psycopg.rows import dict_row
 from .config import settings
 
-
 def _normalize_pg_url(url: str) -> str:
-    # psycopg2 expects "postgresql://..." or "postgres://"
     return re.sub(r"^postgresql\+psycopg2://", "postgresql://", url)
 
-_pg_pool: Optional[pool.SimpleConnectionPool] = None
+_pg_pool: Optional[ConnectionPool] = None
 
 def init_pool(minconn: int = 1, maxconn: int = 10):
     global _pg_pool
     if _pg_pool is None:
         dsn = _normalize_pg_url(settings.database_url)
-        _pg_pool = psycopg2.pool.SimpleConnectionPool(
-            minconn=minconn,
-            maxconn=maxconn,
-            dsn=dsn,
-            cursor_factory=RealDictCursor,
-            
-        )
+        if not dsn:
+            raise RuntimeError("DATABASE_URL is not set; check your .env")
+        _pg_pool = ConnectionPool(conninfo=dsn, min_size=minconn, max_size=maxconn)
     return _pg_pool
 
 def close_pool():
     global _pg_pool
     if _pg_pool is not None:
-        _pg_pool.closeall()
+        _pg_pool.close()
         _pg_pool = None
 
-def get_conn():
+# ---- Dependency: read-only cursor
+def cursor_readonly() -> Generator:
+    """
+    Yields a read-only cursor; autocommit=True to avoid idle transactions.
+    FastAPI manages the generator, keeping cursor/connection alive during the request.
+    """
     if _pg_pool is None:
         raise RuntimeError("DB pool not initialized")
-    return _pg_pool.getconn()
-
-def put_conn(conn):
-    if _pg_pool is not None and conn is not None:
-        _pg_pool.putconn(conn)
-
-def get_cursor(readonly: bool = True) -> Generator:
-    """
-    Dependency-style generator yielding a cursor.
-    - For readonly, uses autocommit to avoid lingering transactions.
-    - For write operations, caller must commit/rollback explicitly.
-    """
-    conn = get_conn()
-    try:
-        if readonly:
-            conn.autocommit = True
-        else:
-            conn.autocommit = False
-        with conn.cursor() as cur:
+    with _pg_pool.connection() as conn:
+        conn.autocommit = True
+        with conn.cursor(row_factory=dict_row) as cur:
             yield cur
-        if not readonly:
+
+# ---- Dependency: write cursor (transactional)
+def cursor_write() -> Generator:
+    """
+    Yields a cursor in a transaction; commits on success, rollbacks on error.
+    """
+    if _pg_pool is None:
+        raise RuntimeError("DB pool not initialized")
+    with _pg_pool.connection() as conn:
+        conn.autocommit = False
+        try:
+            with conn.cursor(row_factory=dict_row) as cur:
+                yield cur
             conn.commit()
-    except Exception:
-        if not readonly:
+        except Exception:
             conn.rollback()
-        raise
-    finally:
-        put_conn(conn)
+            raise
