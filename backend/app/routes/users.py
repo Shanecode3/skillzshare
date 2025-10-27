@@ -16,24 +16,16 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(default=None, min_length=1, max_length=120)
     handle: Optional[str] = Field(default=None, min_length=3, max_length=40)
-    bio: Optional[str] = Field(default=None, max_length=500)
     institute: Optional[str] = Field(default=None, max_length=120)
-    semester: Optional[int] = Field(default=None, ge=1, le=12)
-    country: Optional[str] = Field(default=None, max_length=2)
     timezone_iana: Optional[str] = Field(default=None, max_length=50)
-    avatar_url: Optional[str] = Field(default=None, max_length=300)
 
 class UserOut(BaseModel):
     id: int
     email: EmailStr
     full_name: str
     handle: str
-    bio: Optional[str] = None
     institute: Optional[str] = None
-    semester: Optional[int] = None
-    country: Optional[str] = None
     timezone_iana: Optional[str] = None
-    avatar_url: Optional[str] = None
     is_active: bool
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
@@ -47,8 +39,8 @@ def list_users(
 ):
     sql = """
         SELECT
-          id, email, full_name, handle, bio, institute, semester, country,
-          timezone_iana, avatar_url, is_active, created_at, updated_at
+          id, email, full_name, handle, institute, 
+          timezone_iana, is_active, created_at, updated_at
         FROM users
         WHERE is_active = true
         ORDER BY id
@@ -92,7 +84,7 @@ def create_user(payload: UserCreate, cur = Depends(cursor_write)):
           email, password_hash, full_name, handle
         ) VALUES (%s, %s, %s, %s)
         RETURNING
-          id, email, full_name, handle, bio, institute, semester, country,
+          id, email, full_name, handle, institute,
           timezone_iana, avatar_url, is_active, created_at, updated_at;
     """
     cur.execute(insert_sql, (payload.email, pw_hash, payload.full_name, payload.handle))
@@ -126,29 +118,16 @@ def update_user(
         updates.append("handle = %s")
         params.append(payload.handle)
     
-    if payload.bio is not None:
-        updates.append("bio = %s")
-        params.append(payload.bio)
     
     if payload.institute is not None:
         updates.append("institute = %s")
         params.append(payload.institute)
     
-    if payload.semester is not None:
-        updates.append("semester = %s")
-        params.append(payload.semester)
-    
-    if payload.country is not None:
-        updates.append("country = %s")
-        params.append(payload.country)
     
     if payload.timezone_iana is not None:
         updates.append("timezone_iana = %s")
         params.append(payload.timezone_iana)
     
-    if payload.avatar_url is not None:
-        updates.append("avatar_url = %s")
-        params.append(payload.avatar_url)
     
     if not updates:
         # No changes, return existing
