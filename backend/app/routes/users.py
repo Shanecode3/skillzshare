@@ -145,8 +145,8 @@ def update_user(
         SET {', '.join(updates)}
         WHERE id = %s
         RETURNING
-          id, email, full_name, handle, bio, institute, semester, country,
-          timezone_iana, avatar_url, is_active, created_at, updated_at;
+          id, email, full_name, handle, institute,
+          timezone_iana, is_active, created_at, updated_at;
     """
     
     try:
