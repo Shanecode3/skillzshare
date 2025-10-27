@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SkillzShare - Connect & Learn</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+</head>
+<body>
+  <!-- Preloader -->
+  <div class="preloader" id="preloader">
+    <div class="preloader-content">
+      <div class="loader-logo">⚡ SkillzShare</div>
+      <div class="loader-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring"></div>
+        <div class="loader-particles">
+          <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+          <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        </div>
+      </div>
+      <div class="loader-text">Initializing<span class="loader-dots"></span></div>
+      <div class="loader-progress"><div class="loader-progress-bar"></div></div>
+    </div>
+  </div>
+
+  <!-- Floating orbs -->
+  <div class="floating-orb orb-1"></div>
+  <div class="floating-orb orb-2"></div>
+  <div class="floating-orb orb-3"></div>
+  <div class="floating-orb orb-4"></div>
+
+  <!-- Floating tech logos -->
+  <div class="tech-logos">
+    <iconify-icon icon="logos:react" class="tech-logo logo-react" title="React"></iconify-icon>
+    <iconify-icon icon="logos:vue" class="tech-logo logo-vue" title="Vue.js"></iconify-icon>
+    <iconify-icon icon="logos:angular-icon" class="tech-logo logo-angular" title="Angular"></iconify-icon>
+    <iconify-icon icon="logos:nodejs-icon" class="tech-logo logo-node" title="Node.js"></iconify-icon>
+    <iconify-icon icon="logos:python" class="tech-logo logo-python" title="Python"></iconify-icon>
+    <iconify-icon icon="logos:javascript" class="tech-logo logo-js" title="JavaScript"></iconify-icon>
+    <iconify-icon icon="logos:docker-icon" class="tech-logo logo-docker" title="Docker"></iconify-icon>
+    <iconify-icon icon="logos:git-icon" class="tech-logo logo-git" title="Git"></iconify-icon>
+    <iconify-icon icon="logos:mongodb-icon" class="tech-logo logo-mongodb" title="MongoDB"></iconify-icon>
+    <iconify-icon icon="logos:typescript-icon" class="tech-logo logo-typescript" title="TypeScript"></iconify-icon>
+  </div>
+
+  <div class="container">
+    <!-- Nav -->
+    <div class="nav">
+      <button onclick="window.showPage('home')" id="nav-home">Home</button>
+      <button onclick="window.showPage('register')" id="nav-register">Register / Login</button>
+      <button onclick="window.showPage('profile')" id="nav-profile" style="display:none;">My Profile</button>
+      <button onclick="window.showPage('matches')" id="nav-matches" style="display:none;">Find Matches</button>
+      <button onclick="window.showPage('collaborations')" id="nav-collaborations" style="display:none;">Collaborations</button>
+      <button onclick="window.showPage('messages')" id="nav-messages" style="display:none;">Messages</button>
+      <button onclick="window.handleLogout()" class="logout-btn" id="logout-btn" style="display:none;">Logout</button>
+    </div>
+
+    <!-- Home -->
+    <div id="home" class="page active">
+      <div class="hero">
+        <h1>⚡ SkillzShare</h1>
+        <p>Connect with fellow students and exchange skills!</p>
+        <p>Learn from others while sharing what you know best.</p>
+      </div>
+
+      <div style="margin-top:40px;">
+        <h2>How It Works</h2>
+        <div style="display:grid;gap:30px;margin-top:30px;">
+          <div class="card">
+            <div style="display:flex;align-items:start;gap:20px;">
+              <div style="font-size:3em;color:#00bfff;text-shadow:0 0 20px rgba(0,191,255,.8);min-width:60px;">01</div>
+              <div>
+                <h3>Create Your Profile</h3>
+                <p>Sign up and tell us what skills you have and what you want to learn.</p>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:start;gap:20px;">
+              <div style="font-size:3em;color:#00bfff;text-shadow:0 0 20px rgba(0,191,255,.8);min-width:60px;">02</div>
+              <div>
+                <h3>Find Matches</h3>
+                <p>Our system connects you with students who have the skills you want and want the skills you have.</p>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:start;gap:20px;">
+              <div style="font-size:3em;color:#00bfff;text-shadow:0 0 20px rgba(0,191,255,.8);min-width:60px;">03</div>
+              <div>
+                <h3>Connect & Learn</h3>
+                <p>Send collaboration requests, chat with your matches, and start exchanging knowledge!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Register / Login -->
+    <div id="register" class="page">
+      <h1>Register / Login</h1>
+
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button id="tab-register" class="auth-tab active" onclick="window.showAuthTab('register')">Register</button>
+        <button id="tab-login" class="auth-tab" onclick="window.showAuthTab('login')">Login</button>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="register-pane" class="auth-pane active">
+        <div id="register-message"></div>
+        <form id="registerForm" onsubmit="window.handleRegister(event)">
+          <h2>Create Your Account</h2>
+
+          <label for="name">Full Name *</label>
+          <input type="text" id="name" required>
+
+          <label for="email">Email *</label>
+          <input type="email" id="email" required>
+
+          <label for="password">Password *</label>
+          <input type="password" id="password" minlength="8" autocomplete="new-password" required>
+
+          <label for="college">College/University *</label>
+          <input type="text" id="college" required>
+
+          <label for="skills_offered">Skills You Offer (comma separated) *</label>
+          <textarea id="skills_offered" placeholder="e.g., Web Development, Graphic Design, Python" required></textarea>
+
+          <label for="skills_wanted">Skills You Want to Learn (comma separated) *</label>
+          <textarea id="skills_wanted" placeholder="e.g., Machine Learning, Video Editing, Photography" required></textarea>
+
+          <button type="submit">Register</button>
+        </form>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="login-pane" class="auth-pane">
+        <div id="login-message"></div>
+        <form id="loginForm" onsubmit="window.handleLogin(event)">
+          <h2>Welcome Back</h2>
+
+          <label for="login-email">Email *</label>
+          <input type="email" id="login-email" autocomplete="username" required>
+
+          <label for="login-password">Password *</label>
+          <input type="password" id="login-password" minlength="8" autocomplete="current-password" required>
+
+          <button type="submit">Login</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Profile -->
+    <div id="profile" class="page">
+      <h1>My Profile</h1>
+      <div id="profile-message"></div>
+
+      <form id="profileForm" onsubmit="window.handleProfileUpdate(event)">
+        <h2>Edit Your Profile</h2>
+
+        <label for="profile-name">Full Name *</label>
+        <input type="text" id="profile-name" required>
+
+        <label for="profile-email">Email *</label>
+        <input type="email" id="profile-email" required>
+
+        <label for="profile-college">College/University *</label>
+        <input type="text" id="profile-college" required>
+
+        <label for="profile-skills-offered">Skills You Offer (comma separated) *</label>
+        <textarea id="profile-skills-offered" placeholder="e.g., Python, JavaScript, Design" required></textarea>
+
+        <label for="profile-skills-wanted">Skills You Want to Learn (comma separated) *</label>
+        <textarea id="profile-skills-wanted" placeholder="e.g., Machine Learning, Video Editing" required></textarea>
+
+        <button type="submit">Update Profile</button>
+      </form>
+    </div>
+
+    <!-- Matches -->
+    <div id="matches" class="page">
+      <h1>Your Skill Matches</h1>
+      <div id="matches-message"></div>
+      <div id="matches-list"></div>
+    </div>
+
+    <!-- Collaborations -->
+    <div id="collaborations" class="page">
+      <h1>Collaboration Requests</h1>
+      <div id="collab-message"></div>
+      <div id="collab-list"></div>
+    </div>
+
+    <!-- Messages -->
+    <div id="messages" class="page">
+      <h1>Messages</h1>
+      <div id="messages-container"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
