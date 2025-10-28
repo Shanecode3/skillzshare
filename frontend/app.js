@@ -860,6 +860,11 @@ async function loadCollaborations() {
 
       const statusBadge = `<span class="status-${req.status.toLowerCase()}">${req.status}</span>`;
 
+      // Only show message button if status is ACCEPTED (active collaboration)
+      const messageButton = req.status === 'ACCEPTED' 
+        ? `<button class="btn-secondary" onclick="event.preventDefault(); window.openChatFromCollab(${otherId}, '${otherName.replace(/'/g, "\\'")}')">💬 Message</button>`
+        : '';
+
       return `
         <div class="card collab-card">
           <div class="collab-header">
@@ -872,7 +877,7 @@ async function loadCollaborations() {
           <p><strong>Created:</strong> ${new Date(req.created_at).toLocaleString()}</p>
           <div class="collab-actions">
             ${actions}
-            <button class="btn-secondary" onclick="event.preventDefault(); window.openChatFromCollab(${otherId}, '${otherName.replace(/'/g, "\\'")}')">Message</button>
+            ${messageButton}
           </div>
         </div>
       `;
@@ -952,6 +957,22 @@ async function loadMessages() {
   try {
     console.log('Loading messages for user:', currentUser.id);
     
+    // Get accepted collaborations to determine who we can chat with
+    const collabs = await api(`/collab-requests/?user_id=${currentUser.id}&status=ACCEPTED&limit=100`);
+    
+    if (!collabs || collabs.length === 0) {
+      box.innerHTML = `
+        <div style="text-align:center;color:#87ceeb;margin-top:100px;">
+          <h3>No active collaborations</h3>
+          <p>Accept a collaboration request first to start messaging!</p>
+          <button class="btn-primary" onclick="window.showPage('collaborations')" style="margin-top: 20px;">
+            View Collaboration Requests
+          </button>
+        </div>
+      `;
+      return;
+    }
+    
     // Get all messages where user is sender or receiver
     const [sent, received] = await Promise.all([
       api(`/messages/?sender_id=${currentUser.id}&limit=200`),
@@ -961,26 +982,17 @@ async function loadMessages() {
     console.log('Sent messages:', sent.length);
     console.log('Received messages:', received.length);
     
-    // Find unique conversation partners
-    const partners = new Set();
-    [...sent, ...received].forEach(msg => {
-      const otherId = msg.sender_id === currentUser.id ? msg.receiver_id : msg.sender_id;
-      partners.add(otherId);
+    // Build list of collaboration partners (people we have ACCEPTED collabs with)
+    const collabPartners = new Set();
+    collabs.forEach(c => {
+      const otherId = c.requester_id === currentUser.id ? c.receiver_id : c.requester_id;
+      collabPartners.add(otherId);
     });
     
-    console.log('Conversation partners:', Array.from(partners));
+    console.log('Collaboration partners:', Array.from(collabPartners));
     
-    if (partners.size === 0) {
-      box.innerHTML = `
-        <div style="text-align:center;color:#87ceeb;margin-top:100px;">
-          <h3>No conversations yet</h3>
-          <p>Send a message from your matches or collaborations to start chatting!</p>
-        </div>
-      `;
-      return;
-    }
-
-    const conversations = await Promise.all([...partners].map(async partnerId => {
+    // Create conversations only for collab partners
+    const conversations = await Promise.all([...collabPartners].map(async partnerId => {
       const partner = await getUser(partnerId);
       const msgs = [...sent, ...received]
         .filter(m => m.sender_id === partnerId || m.receiver_id === partnerId)
@@ -992,9 +1004,10 @@ async function loadMessages() {
       return {
         partnerId,
         partnerName: partner?.full_name || partner?.handle || 'Unknown User',
-        lastMessage: lastMsg.body.substring(0, 50) + (lastMsg.body.length > 50 ? '...' : ''),
-        lastTime: new Date(lastMsg.created_at),
-        unread
+        lastMessage: lastMsg ? lastMsg.body.substring(0, 50) + (lastMsg.body.length > 50 ? '...' : '') : 'No messages yet',
+        lastTime: lastMsg ? new Date(lastMsg.created_at) : new Date(0),
+        unread,
+        hasMessages: msgs.length > 0
       };
     }));
 
@@ -1007,13 +1020,13 @@ async function loadMessages() {
           ${conv.unread > 0 ? `<span class="unread-badge">${conv.unread}</span>` : ''}
         </div>
         <div class="conv-preview">${escapeHtml(conv.lastMessage)}</div>
-        <div class="conv-time">${formatTime(conv.lastTime)}</div>
+        <div class="conv-time">${conv.hasMessages ? formatTime(conv.lastTime) : 'Start chatting'}</div>
       </div>
     `).join('');
 
     box.innerHTML = `
       <div class="messages-sidebar">
-        <h3>Conversations</h3>
+        <h3>Active Collaborations</h3>
         ${listHtml}
       </div>
       <div class="messages-chat" id="chat-area">
@@ -1028,6 +1041,28 @@ async function loadMessages() {
 
 window.openChat = async function(partnerId) {
   activeChat = partnerId;
+  
+  // Check if there are any messages in this thread
+  try {
+    const thread = await api(`/messages/thread?user_a=${currentUser.id}&user_b=${partnerId}&limit=1`);
+    
+    // If no messages exist, send a welcome message automatically
+    if (!thread || thread.length === 0) {
+      const partner = await getUser(partnerId);
+      const partnerName = partner?.full_name || partner?.handle || 'there';
+      
+      await api('/messages/', {
+        method: 'POST',
+        body: {
+          sender_id: currentUser.id,
+          receiver_id: partnerId,
+          body: `Hi ${partnerName}! I'm excited to start our skill exchange. When would be a good time for you?`
+        }
+      });
+    }
+  } catch (e) {
+    console.warn('Error checking/creating initial message:', e);
+  }
   
   // Mark messages as read
   try {
