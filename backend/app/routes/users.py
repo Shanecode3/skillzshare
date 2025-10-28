@@ -56,8 +56,8 @@ def get_user(
 ):
     cur.execute("""
         SELECT
-          id, email, full_name, handle, bio, institute, semester, country,
-          timezone_iana, avatar_url, is_active, created_at, updated_at
+          id, email, full_name, handle, institute,
+          timezone_iana, is_active, created_at, updated_at
         FROM users
         WHERE id = %s;
     """, (user_id,))
@@ -85,7 +85,7 @@ def create_user(payload: UserCreate, cur = Depends(cursor_write)):
         ) VALUES (%s, %s, %s, %s)
         RETURNING
           id, email, full_name, handle, institute,
-          timezone_iana, avatar_url, is_active, created_at, updated_at;
+          timezone_iana, is_active, created_at, updated_at;
     """
     cur.execute(insert_sql, (payload.email, pw_hash, payload.full_name, payload.handle))
     return cur.fetchone()
